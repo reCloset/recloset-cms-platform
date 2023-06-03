@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
+import { Component, Inject, OnInit } from '@angular/core';
+import { inject } from '@angular/core';
+import { CollectionReference, DocumentData, Firestore, collectionData, collection as firestoreCollection } from '@angular/fire/firestore';
+import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { Observable } from 'rxjs';
 
 interface FlaggedItem {
@@ -12,29 +14,31 @@ interface FlaggedItem {
 @Component({
   selector: 'app-flagged-items',
   templateUrl: './flagged-items.component.html',
-  styleUrls: ['./flagged-items.component.css']
+  styleUrls: ['./flagged-items.component.scss']
 })
 export class FlaggedItemsComponent implements OnInit {
-  flaggedItemsCollection: AngularFirestoreCollection<FlaggedItem>;
-  flaggedItems: Observable<FlaggedItem[]>;
+  flaggedCollection: CollectionReference<DocumentData>;
+  flaggedItem$: Observable<DocumentData[]>;
 
-  constructor(private firestore: AngularFirestore) { 
-    this.flaggedItemsCollection = this.firestore.collection<FlaggedItem>('flaggedItems');
-    this.flaggedItems = this.flaggedItemsCollection.valueChanges();
+  constructor(@Inject(Firestore) private firestore: Firestore) { 
+    this.flaggedCollection = firestoreCollection(this.firestore, 'flaggedItems')
+    this.flaggedItem$ = collectionData(this.flaggedCollection)
   }
 
-  approveItem(item: FlaggedItem) {
-    // Update the 'approved' field to true
-    this.flaggedItemsCollection.doc(item.id).update({ approved: true });
+  async approveItem(item: FlaggedItem) {
+    const flaggedItemDoc = doc(this.firestore, 'flaggedItems', item.id);
+    await deleteDoc(flaggedItemDoc);
+    
+    const approvedItemsCollection = firestoreCollection(this.firestore, 'approvedItems');
+    const approvedItemDoc = doc(approvedItemsCollection);
+    await setDoc(approvedItemDoc, item);  
   }
   
-  rejectItem(item: FlaggedItem) {
-    // Update the 'approved' field to false
-    this.flaggedItemsCollection.doc(item.id).update({ approved: false });
+  async rejectItem(item: FlaggedItem) {
+    const flaggedItemDoc = doc(this.firestore, 'flaggedItems', item.id);
+    await deleteDoc(flaggedItemDoc);
   }
 
   ngOnInit() {
-    this.flaggedItemsCollection = this.firestore.collection<FlaggedItem>('flaggedItems');
-    this.flaggedItems = this.flaggedItemsCollection.valueChanges();
   }
 }
