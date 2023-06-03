@@ -1,0 +1,21 @@
+<table>
+    <tr>
+      <th>Name</th>
+      <th>Images</th>
+      <th>Approved</th>
+    </tr>
+    <tr *ngFor="let item of flaggedItems | async">
+      <td>{{ item.name }}</td>
+      <td>
+        <div *ngFor="let imageUrl of item.imageUrls">
+          <img [src]="imageUrl" alt="Image" width="100" height="100">
+        </div>
+      </td>
+      <td>{{ item.approved ? 'Approved' : 'Not Approved' }}</td>
+      <td>
+        <button (click)="approveItem(item)">Approve</button>
+        <button (click)="rejectItem(item)">Reject</button>
+      </td>
+    </tr>
+  </table>
+  
